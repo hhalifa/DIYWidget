@@ -147,10 +147,18 @@ public class YRoundelMenu extends ViewGroup {
 
         mRoundPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         mRoundPaint.setColor(mRoundColor);
+        /*
+         * STROKE 描边
+         * FILL 填充
+         * FILL_AND_STROKE 描边加填充
+         *
+         */
         mRoundPaint.setStyle(Paint.Style.FILL);
+        //抗锯齿
         mCenterPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         mCenterPaint.setColor(mRoundColor);
         mCenterPaint.setStyle(Paint.Style.FILL);
+        //ViewGroup的onDraw不会被执行，默认透明，使用此方法清楚标志位使onDraw能够执行
         setWillNotDraw(false);
 
         if (Build.VERSION.SDK_INT >= 21) {
@@ -434,6 +442,18 @@ public class YRoundelMenu extends ViewGroup {
     }
 
 
+    /**
+     * Android5.0后添加的api，用于实现View的阴影和轮廓（圆角）
+     * 搭配setOutlineProvider使用
+     *
+     * getOutline中
+     * 设置圆角
+     * outline.setRoundRect(0, 0, view.width, view.height, 50f)
+     * 设置圆形
+     * 若 View 的宽高相等,效果等同于setRoundRect
+     * 若 View 的宽高不等,效果等同于setConvexPath
+     * outline.setOval(0, 0, view.width, view.height)
+     */
     @TargetApi(Build.VERSION_CODES.LOLLIPOP)
     public class OvalOutline extends ViewOutlineProvider {
 
@@ -443,6 +463,7 @@ public class YRoundelMenu extends ViewGroup {
 
         @Override
         public void getOutline(View view, Outline outline) {
+            //TODO 查明这个expandProgress有啥用（有个收缩回弹动画？）
             int radius = (int) (collapsedRadius + (expandedRadius - collapsedRadius) * expandProgress);
             Rect area = new Rect(
                     center.x - radius,

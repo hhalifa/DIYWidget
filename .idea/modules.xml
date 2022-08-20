@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/DIYWidget.iml" filepath="$PROJECT_DIR$/.idea/modules/DIYWidget.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/app/DIYWidget.app.iml" filepath="$PROJECT_DIR$/.idea/modules/app/DIYWidget.app.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/app/DIYWidget.app.androidTest.iml" filepath="$PROJECT_DIR$/.idea/modules/app/DIYWidget.app.androidTest.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/app/DIYWidget.app.main.iml" filepath="$PROJECT_DIR$/.idea/modules/app/DIYWidget.app.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/app/DIYWidget.app.unitTest.iml" filepath="$PROJECT_DIR$/.idea/modules/app/DIYWidget.app.unitTest.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/widget/DIYWidget.widget.iml" filepath="$PROJECT_DIR$/.idea/modules/widget/DIYWidget.widget.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/widget/DIYWidget.widget.androidTest.iml" filepath="$PROJECT_DIR$/.idea/modules/widget/DIYWidget.widget.androidTest.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/widget/DIYWidget.widget.main.iml" filepath="$PROJECT_DIR$/.idea/modules/widget/DIYWidget.widget.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/widget/DIYWidget.widget.unitTest.iml" filepath="$PROJECT_DIR$/.idea/modules/widget/DIYWidget.widget.unitTest.iml" />
+    </modules>
+  </component>
+</project>
