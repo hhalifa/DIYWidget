@@ -163,6 +163,7 @@ public class YRoundelMenu extends ViewGroup {
 
         if (Build.VERSION.SDK_INT >= 21) {
             outlineProvider = new OvalOutline();
+            //setElevation可以设置View的高度（相互覆盖关系 阴影等的相关）
             setElevation(dp2px(5));
         }
         center = new Point();
@@ -173,7 +174,9 @@ public class YRoundelMenu extends ViewGroup {
     }
 
     private void initAnim(){
+        //？？？0-0是什么操作
         mExpandAnimator = ValueAnimator.ofFloat(0, 0);
+        //设置插值器，数值随时间变化的曲线  OvershootInterpolator结束时往后甩一下
         mExpandAnimator.setInterpolator(new OvershootInterpolator());
         mExpandAnimator.setDuration(mDuration);
         mExpandAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
@@ -444,14 +447,14 @@ public class YRoundelMenu extends ViewGroup {
 
     /**
      * Android5.0后添加的api，用于实现View的阴影和轮廓（圆角）
-     * 搭配setOutlineProvider使用
+     * 搭配  View.setOutlineProvider()使用
      *
      * getOutline中
-     * 设置圆角
+     * 设置圆角/圆形（50f参数不要）
      * outline.setRoundRect(0, 0, view.width, view.height, 50f)
-     * 设置圆形
-     * 若 View 的宽高相等,效果等同于setRoundRect
-     * 若 View 的宽高不等,效果等同于setConvexPath
+     * 设置投影，需要一个path
+     * setConvexPath()
+     * 设置椭圆投影
      * outline.setOval(0, 0, view.width, view.height)
      */
     @TargetApi(Build.VERSION_CODES.LOLLIPOP)
@@ -461,15 +464,22 @@ public class YRoundelMenu extends ViewGroup {
             super();
         }
 
+        //TODO getOutline调用时机
         @Override
         public void getOutline(View view, Outline outline) {
-            //TODO 查明这个expandProgress有啥用（有个收缩回弹动画？）
+            //expandProgress用于动画，动态扩大半径
             int radius = (int) (collapsedRadius + (expandedRadius - collapsedRadius) * expandProgress);
+            /*
+                Rect 长方形
+                构造方法中 left top为左上角的点坐标，right bottom为左下角的点坐标
+                此处创建一个边长为radius的正方形
+            */
             Rect area = new Rect(
                     center.x - radius,
                     center.y - radius,
                     center.x + radius,
                     center.y + radius);
+            //把正方形变成圆形
             outline.setRoundRect(area, radius);
         }
     }
