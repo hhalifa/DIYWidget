@@ -163,7 +163,7 @@ public class YRoundelMenu extends ViewGroup {
 
         if (Build.VERSION.SDK_INT >= 21) {
             outlineProvider = new OvalOutline();
-            //setElevation可以设置View的高度（相互覆盖关系 阴影等的相关）
+            //设置Z轴高度（阴影 和 view堆叠关系）
             setElevation(dp2px(5));
         }
         center = new Point();
@@ -176,8 +176,9 @@ public class YRoundelMenu extends ViewGroup {
     private void initAnim(){
         //？？？0-0是什么操作
         mExpandAnimator = ValueAnimator.ofFloat(0, 0);
-        //设置插值器，数值随时间变化的曲线  OvershootInterpolator结束时往后甩一下
+        //设置插值器，数值随时间变化的曲线  OvershootInterpolator超过1后回到1，即回弹效果
         mExpandAnimator.setInterpolator(new OvershootInterpolator());
+        //属性里面读出来的持续时间
         mExpandAnimator.setDuration(mDuration);
         mExpandAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
             @Override
@@ -186,8 +187,10 @@ public class YRoundelMenu extends ViewGroup {
                 mRoundPaint.setAlpha(Math.min(255, (int) (expandProgress * 255)));
 
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                    //触发OvalOutline.getOutline()方法
                     invalidateOutline();
                 }
+                //view也进行重绘
                 invalidate();
             }
         });
@@ -260,6 +263,10 @@ public class YRoundelMenu extends ViewGroup {
         }
     }
 
+    /**
+     * 在布局文件加载View实例的时候会回调inflate()
+     * 但是在代码里面new是不会回调此方法的
+     */
     @Override
     protected void onFinishInflate() {
         super.onFinishInflate();
@@ -306,7 +313,9 @@ public class YRoundelMenu extends ViewGroup {
     }
 
 
-
+    /**
+     * 这个方法再onMeasure()的setFrame()方法中回调，在onMeasure() -> onLayout()之间
+     */
     @Override
     protected void onSizeChanged(int w, int h, int oldw, int oldh) {
         super.onSizeChanged(w, h, oldw, oldh);
@@ -468,6 +477,7 @@ public class YRoundelMenu extends ViewGroup {
         @Override
         public void getOutline(View view, Outline outline) {
             //expandProgress用于动画，动态扩大半径
+            //TODO 查明getOutline的调用时机，很明显对象创建的时候此方法还未被调用
             int radius = (int) (collapsedRadius + (expandedRadius - collapsedRadius) * expandProgress);
             /*
                 Rect 长方形
