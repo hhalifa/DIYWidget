@@ -140,7 +140,15 @@ public class YRoundelMenu extends ViewGroup {
         }
     }
 
-
+    /**
+     * 构造器方法 初始化准备 还没开始画
+     * 1 设置Paint的各种属性（还未开始画）
+     * 2 如果是ViewGroup 设置setWillNotDraw()，让ViewGroup走onDraw()方法
+     * 3 圆形，圆角，阴影，初始化OutlineProvider并进行绘制，并设置Z轴
+     * 4 初始化动画，设置好插值器 listener（调用invalidate()进行重绘）
+     * @param context
+     * @param attrs
+     */
     private void init(Context context, AttributeSet attrs) {
 
         handleStyleable(context, attrs);
@@ -155,6 +163,7 @@ public class YRoundelMenu extends ViewGroup {
          */
         mRoundPaint.setStyle(Paint.Style.FILL);
         //抗锯齿
+        //初始化Paint画笔，此时还没开始画
         mCenterPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         mCenterPaint.setColor(mRoundColor);
         mCenterPaint.setStyle(Paint.Style.FILL);
@@ -183,6 +192,8 @@ public class YRoundelMenu extends ViewGroup {
         mExpandAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
             @Override
             public void onAnimationUpdate(ValueAnimator animation) {
+                //通过Animator是实现expendProgress数值的变化，同时expendProgress变化的同时调用invalidate()进行重绘
+                //这个也是调用invalidateOutline()的时机，进行OutlineProvider的刷新
                 expandProgress = (float)animation.getAnimatedValue();
                 mRoundPaint.setAlpha(Math.min(255, (int) (expandProgress * 255)));
 
@@ -195,6 +206,15 @@ public class YRoundelMenu extends ViewGroup {
             }
         });
 
+        /*
+          ofObject方法传入一个自定义的TypeEvaluator
+          重写   fraction为进度，start end为起始和结束值
+          public T evaluate(float fraction, T startValue, T endValue)
+          T代表返回的值，色彩的值，字符串值，int值等等，因为fraction为float类型，因此返回值和float的关系也需要自己进行关系定义
+
+          fraction我猜是 setDuration和start end共同作用出来的
+          通过Listener的getAnimatedValue()可以获得线性变化的fraction和传进去的T共同作用返回的T（int 字符串 颜色等）
+         */
         mColorAnimator = ValueAnimator.ofObject(new ArgbEvaluator(), mRoundColor, mCenterColor);
         mColorAnimator.setDuration(mDuration);
         mColorAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
@@ -238,16 +258,33 @@ public class YRoundelMenu extends ViewGroup {
         }
     }
 
+    /**
+     * onMeasure()设置View的宽高
+     * @param widthMeasureSpec
+     * @param heightMeasureSpec
+     */
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
         int width = MeasureSpec.getSize(widthMeasureSpec);
         int height = MeasureSpec.getSize(heightMeasureSpec);
+        //View的标准流程，不仅需要setMeasuredDimension()设置自己的宽高，还需要设置子View的宽高
+        //也可以调用measureChildWithMargins()方法适配margin属性
         setMeasuredDimension(width, height);
         measureChildren(widthMeasureSpec, heightMeasureSpec);
     }
 
 
+    /**
+     * onLayout()用于确定子元素的位置
+     * 调用子View的layout()方法，里面有setFrame()方法设置子View的四个角坐标
+     * 因此如果没有子元素，直接return()
+     * @param changed
+     * @param l
+     * @param t
+     * @param r
+     * @param b
+     */
     @Override
     protected void onLayout(boolean changed, int l, int t, int r, int b) {
         if (getChildCount() == 0) {
@@ -404,7 +441,9 @@ public class YRoundelMenu extends ViewGroup {
      * 计算每个子菜单的坐标
      */
     private void calculateMenuItemPosition() {
+        //外圆内圆平均半径
         float itemRadius = (expandedRadius + collapsedRadius) / 2f;
+        //平均半径的圆外面的正方形   RectF和Rect区别就是使用Float参数，精确度更高
         RectF area = new RectF(
                 center.x - itemRadius,
                 center.y - itemRadius,
@@ -412,6 +451,8 @@ public class YRoundelMenu extends ViewGroup {
                 center.y + itemRadius);
         Path path = new Path();
         path.addArc(area, 0, 360);
+        //关联path，forceClosed参数用于确定path是否闭合，如画两根相连的线，闭合则形成三角形，不闭合就是一个角
+        //path发生改变则需要重新setPath()
         PathMeasure measure = new PathMeasure(path, false);
         float len = measure.getLength();
         int divisor = getChildCount();
@@ -419,6 +460,11 @@ public class YRoundelMenu extends ViewGroup {
 
         for (int i = 0; i < getChildCount(); i++) {
             float[] itemPoints = new float[2];
+            //用于得到路径上某一长度的位置以及该位置的正切值
+            //distance：获取点距离起点的长度
+            //pos：获取点的坐标
+            //tan：获取点的正切值，tan是tangent的缩写，即中学中常见的正切，其中tan[0]是邻边边长，tan[1]是对边边长，而Math中atan2方法是根据正切是数值计算出该角度的大小，得到的单位是弧度，所以上面又将弧度转为了角度。
+            //exm:float degrees = (float) (Math.atan2(tan[1], tan[0]) * 180.0 / Math.PI); 计算出角度，可以让图案旋转成当前path斜率的角度
             measure.getPosTan(i * divider + divider * 0.5f, itemPoints, null);
             View item = getChildAt(i);
             item.setX((int) itemPoints[0] - mItemWidth / 2);
