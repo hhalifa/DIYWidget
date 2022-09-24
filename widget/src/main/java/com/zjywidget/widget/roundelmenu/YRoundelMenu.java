@@ -170,6 +170,7 @@ public class YRoundelMenu extends ViewGroup {
         //ViewGroup的onDraw不会被执行，默认透明，使用此方法清楚标志位使onDraw能够执行
         setWillNotDraw(false);
 
+        //初始化OutlineProvider（此时并未真正应用）
         if (Build.VERSION.SDK_INT >= 21) {
             outlineProvider = new OvalOutline();
             //设置Z轴高度（阴影 和 view堆叠关系）
@@ -183,7 +184,7 @@ public class YRoundelMenu extends ViewGroup {
     }
 
     private void initAnim(){
-        //？？？0-0是什么操作
+        //0-0是什么操作--先new出来 使用的时候再设置
         mExpandAnimator = ValueAnimator.ofFloat(0, 0);
         //设置插值器，数值随时间变化的曲线  OvershootInterpolator超过1后回到1，即回弹效果
         mExpandAnimator.setInterpolator(new OvershootInterpolator());
@@ -364,6 +365,7 @@ public class YRoundelMenu extends ViewGroup {
         y = h / 2 ;
         center.set(x, y);
         //中心图标padding设为10dp
+        //setBounds()方法表示drawable将被绘制在canvas的哪个矩形区域内，设置drawable的padding可以在这个方法内设置
         mCenterDrawable.setBounds(center.x - (collapsedRadius - dp2px(10)),
                 center.y - (collapsedRadius - dp2px(10)),
                 center.x + (collapsedRadius - dp2px(10)),
@@ -371,11 +373,17 @@ public class YRoundelMenu extends ViewGroup {
         );
     }
 
+    /**
+     * onDraw一般由invalidate()控制，此处控制的代码直接反馈到ui上
+     * @param canvas
+     */
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
         //绘制放大的圆
         if (expandProgress > 0f) {
+            //x,y为圆心位置，radius为半径，paint为画笔，已经在init初始化
+            //此处控制radius值即可通过再动画里面通过invalidate()方法进行动画绘制
             canvas.drawCircle(center.x, center.y, collapsedRadius + (expandedRadius - collapsedRadius) * expandProgress, mRoundPaint);
         }
         //绘制中间圆
