@@ -232,6 +232,10 @@ public class YRoundelMenu extends ViewGroup {
         return expandProgress;
     }
 
+    /**
+     * onTouchEvent调用，点击即刻invalidate()并开始动画
+     * @param animate
+     */
     void collapse(boolean animate) {
         state = STATE_COLLAPSE;
         for (int i = 0; i < getChildCount(); i++) {
@@ -363,6 +367,7 @@ public class YRoundelMenu extends ViewGroup {
         int x, y;
         x = w / 2;
         y = h / 2 ;
+        //center在此处进行赋值更新，作为圆心使用
         center.set(x, y);
         //中心图标padding设为10dp
         //setBounds()方法表示drawable将被绘制在canvas的哪个矩形区域内，设置drawable的padding可以在这个方法内设置
@@ -376,18 +381,24 @@ public class YRoundelMenu extends ViewGroup {
     /**
      * onDraw一般由invalidate()控制，此处控制的代码直接反馈到ui上
      * @param canvas
+     * canvas 有save() 和 restore()方法
      */
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
-        //绘制放大的圆
+        //绘制放大的圆（绘制环形）
         if (expandProgress > 0f) {
             //x,y为圆心位置，radius为半径，paint为画笔，已经在init初始化
             //此处控制radius值即可通过再动画里面通过invalidate()方法进行动画绘制
             canvas.drawCircle(center.x, center.y, collapsedRadius + (expandedRadius - collapsedRadius) * expandProgress, mRoundPaint);
         }
-        //绘制中间圆
+        //绘制中间圆，44*.2f = 4.4 中间的圆会扩大一丝丝距离
         canvas.drawCircle(center.x, center.y, collapsedRadius + (collapsedRadius * .2f * expandProgress), mCenterPaint);
+        // canvas的 save() 和 restore()方法成对出现，为了解决canvas进行 rotate translate等等操作后坐标轴会发生变化
+        // 先save再restore进行恢复不影响后续坐标轴相关操作 save会返回一个id值，多次save后可以使用restoreToCount进行弹出到指定的保存
+        // saveLayer()方法与save()差不多，但是saveLayer()会新建图层（性能有损耗！）
+        // 先saveLayer()新建图层再restore()，会把入栈的图层出栈，同时把图层的内容绘制到上层或canvas上
+        //saveLayer()一般配合Paint.setXfermode()使用，避免出现多图层混一起而导致重叠效果出错
         int count = canvas.saveLayer(0, 0, getWidth(), getHeight(), null, Canvas.ALL_SAVE_FLAG);
         //绘制中间的图标
         canvas.rotate(45*expandProgress, center.x, center.y);
@@ -405,6 +416,7 @@ public class YRoundelMenu extends ViewGroup {
         mColorAnimator.setObjectValues(mColorAnimator.getAnimatedValue() == null ? mRoundColor : mColorAnimator.getAnimatedValue(), mCenterColor);
         mColorAnimator.start();
 
+        //默认延迟时间，一个一个出来，默认值50感觉看不出来效果
         int delay = mItemAnimIntervalTime;
         for (int i = 0; i < getChildCount(); i++) {
             getChildAt(i).animate()
@@ -422,7 +434,7 @@ public class YRoundelMenu extends ViewGroup {
     }
 
     /**
-     * 收缩动画
+     * 收缩动画，动画触发invalidate()，导致重绘，颜色位置大小均在动画中改变
      */
     void startCollapseAnimation() {
         mExpandAnimator.setFloatValues(getExpandProgress(), 0f);
@@ -451,7 +463,7 @@ public class YRoundelMenu extends ViewGroup {
     private void calculateMenuItemPosition() {
         //外圆内圆平均半径
         float itemRadius = (expandedRadius + collapsedRadius) / 2f;
-        //平均半径的圆外面的正方形   RectF和Rect区别就是使用Float参数，精确度更高
+        //绘制正方形，用于绘制正方形内以边长为直径的圆   RectF和Rect区别就是使用Float参数，精确度更高
         RectF area = new RectF(
                 center.x - itemRadius,
                 center.y - itemRadius,
@@ -459,20 +471,22 @@ public class YRoundelMenu extends ViewGroup {
                 center.y + itemRadius);
         Path path = new Path();
         path.addArc(area, 0, 360);
-        //关联path，forceClosed参数用于确定path是否闭合，如画两根相连的线，闭合则形成三角形，不闭合就是一个角
+        //PathMeasure关联path，forceClosed参数用于确定path是否闭合，如画两根相连的线，闭合则形成三角形，不闭合就是一个角
         //path发生改变则需要重新setPath()
         PathMeasure measure = new PathMeasure(path, false);
         float len = measure.getLength();
         int divisor = getChildCount();
         float divider = len / divisor;
 
+        //平均分这个圆，并定位每个item的位置
         for (int i = 0; i < getChildCount(); i++) {
             float[] itemPoints = new float[2];
             //用于得到路径上某一长度的位置以及该位置的正切值
             //distance：获取点距离起点的长度
-            //pos：获取点的坐标
+            //pos：获取点的坐标，直接写数组
             //tan：获取点的正切值，tan是tangent的缩写，即中学中常见的正切，其中tan[0]是邻边边长，tan[1]是对边边长，而Math中atan2方法是根据正切是数值计算出该角度的大小，得到的单位是弧度，所以上面又将弧度转为了角度。
             //exm:float degrees = (float) (Math.atan2(tan[1], tan[0]) * 180.0 / Math.PI); 计算出角度，可以让图案旋转成当前path斜率的角度
+            // ----------此处是获取了n段圆弧，每段圆弧正中间的坐标，反映在itemPoints里面 ---------
             measure.getPosTan(i * divider + divider * 0.5f, itemPoints, null);
             View item = getChildAt(i);
             item.setX((int) itemPoints[0] - mItemWidth / 2);
