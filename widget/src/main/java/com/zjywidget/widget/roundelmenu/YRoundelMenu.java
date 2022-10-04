@@ -196,6 +196,7 @@ public class YRoundelMenu extends ViewGroup {
                 //通过Animator是实现expendProgress数值的变化，同时expendProgress变化的同时调用invalidate()进行重绘
                 //这个也是调用invalidateOutline()的时机，进行OutlineProvider的刷新
                 expandProgress = (float)animation.getAnimatedValue();
+                //注意setColor和setAlpha的顺序，setColor会顺便把透明度也设置了
                 mRoundPaint.setAlpha(Math.min(255, (int) (expandProgress * 255)));
 
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
@@ -215,6 +216,8 @@ public class YRoundelMenu extends ViewGroup {
 
           fraction我猜是 setDuration和start end共同作用出来的
           通过Listener的getAnimatedValue()可以获得线性变化的fraction和传进去的T共同作用返回的T（int 字符串 颜色等）
+
+          ArgbEvaluator为系统提供的一个颜色渐变的类
          */
         mColorAnimator = ValueAnimator.ofObject(new ArgbEvaluator(), mRoundColor, mCenterColor);
         mColorAnimator.setDuration(mDuration);
@@ -233,7 +236,8 @@ public class YRoundelMenu extends ViewGroup {
     }
 
     /**
-     * onTouchEvent调用，点击即刻invalidate()并开始动画
+     * onTouchEvent调用，点击即刻invalidate()
+     * 同时开始动画
      * @param animate
      */
     void collapse(boolean animate) {
@@ -295,6 +299,7 @@ public class YRoundelMenu extends ViewGroup {
         if (getChildCount() == 0) {
             return;
         }
+        //此方法内已经为子view set X Y，最后再调用子View的layout方法
         calculateMenuItemPosition();
         for (int i = 0; i < getChildCount(); i++) {
             View item = getChildAt(i);
@@ -306,8 +311,11 @@ public class YRoundelMenu extends ViewGroup {
     }
 
     /**
-     * 在布局文件加载View实例的时候会回调inflate()
-     * 但是在代码里面new是不会回调此方法的
+     * 在布局文件加载View实例的时候在inflate()过程回调 但是在代码里面new是不会回调此方法的
+     * 当View中所有的子控件均被映射成xml后触发  用于初始化子View
+     *
+     * 子View是在Activity里面setContentView()的时候添加进去的，因此构造方法内不可初始化
+     * 子View只有在三大流程和这个onFinishInflate内才能获取到，但是三大流程会重复调用，因此放此处初始化子View最合适
      */
     @Override
     protected void onFinishInflate() {
@@ -437,6 +445,7 @@ public class YRoundelMenu extends ViewGroup {
      * 收缩动画，动画触发invalidate()，导致重绘，颜色位置大小均在动画中改变
      */
     void startCollapseAnimation() {
+        //这句兼容了在动画播放过程中再次点击的情况
         mExpandAnimator.setFloatValues(getExpandProgress(), 0f);
         mExpandAnimator.start();
 
