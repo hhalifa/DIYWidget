@@ -369,9 +369,10 @@ public class YRoundelMenu extends ViewGroup {
     @Override
     protected void onSizeChanged(int w, int h, int oldw, int oldh) {
         super.onSizeChanged(w, h, oldw, oldh);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            setOutlineProvider(outlineProvider);
-        }
+        //每次都会重新set OutlineProvider？个人觉得这里不需要重新set，后续观察是否有bug
+//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+//            setOutlineProvider(outlineProvider);
+//        }
         int x, y;
         x = w / 2;
         y = h / 2 ;
